@@ -7,31 +7,19 @@ from . import exceptions
 from . import constants
 
 
-class MyShowsLogin(object):
-    """Login with username and password"""
+class MyShowsBaseLogin(object):
+    def __init__(self):
+        cj = CookieJar()
+        self._opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        self._credentials = {}
+        self._login_path = ''
 
-    def __init__(self, login, password=None, password_md5=None):
-	cj = CookieJar()
-	self._opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-	if not login:
-            raise ValueError("Empty user login")
-        self._login = login
-        if password and password_md5:
-            raise ValueError("Use password OR password_md5")
-        if (not password) and (not password_md5):
-            raise ValueError("Password value empty")
-        if password:
-            self._password_md5 = hashlib.md5(password).hexdigest()
-        if password_md5:
-            self._password_md5 = password_md5
+    def get_opener(self):
+        return self._opener
 
     def login(self):
-        url = urlparse.urljoin(constants.API_HOST, constants.LOGIN_PATH)
-        data = {
-            'login': self._login,
-            'password': self._password_md5
-        }
-        enc_data = urllib.urlencode(data)
+        url = urlparse.urljoin(constants.API_HOST, self._login_path)
+        enc_data = urllib.urlencode(self._credentials)
         url += "?" + enc_data
         r = self._opener.open(url)
         code = r.getcode()
@@ -42,36 +30,42 @@ class MyShowsLogin(object):
                 raise exceptions.MyShowsLoginEmptyException
             else:
                 raise exceptions.MyShowsException("Incorrect return code %s" % code)
-        print r.read()
         return True
-        
-    def get_opener(self):
-      return self._opener
 
 
-class MyShowsVKLogin(MyShowsLogin):
-    def __init__(self, token, userid):
-      
-        if (not userid) and (not token):
-            raise ValueError("Empy paramters")
-        self._token = token
-        self._userid = userid
+class MyShowsLogin(MyShowsBaseLogin):
+    """Login with username and password"""
+    def __init__(self, login, password=None, password_md5=None):
+        super(MyShowsLogin, self).__init__()
+        self._login_path = constants.LOGIN_PATH
+        if not login:
+            raise ValueError("Empty user login")
+        self._credentials['login'] = login
+        if password and password_md5:
+            raise ValueError("Use password OR password_md5")
+        if (not password) and (not password_md5):
+            raise ValueError("Password value empty")
+        if password:
+            self._credentials['password'] =  hashlib.md5(password).hexdigest()
+        if password_md5:
+            self._credentials['password'] = password_md5
 
-    def login(self):
-        url = urlparse.urljoin(constants.API_HOST, constants.VK_LOGIN_PATH)
-        data = {
-            'userid': self._userid,
-            'token': self._token
-        }
-        enc_data = urllib.urlencode(data)
-        url += "?" + enc_data
-        r = urllib.urlopen(url)
-        code = r.getcode()
-        if code != 200:
-            if code == 403:
-                raise exceptions.MyShowsLoginIncorrectException()
-            elif code == 404:
-                raise exceptions.MyShowsLoginEmptyException
-            else:
-                raise exceptions.MyShowsException("Incorrect return code")
-        return True
+
+class MyShowsSocialLogin(MyShowsBaseLogin):
+    """Login with social networks"""
+    SOCIALS = ['vk', 'fb', 'tw']
+    def __init__(self, social, **kwargs):
+        """
+        http://api.myshows.ru/profile/login/vk?token=<token>&userId=<userId>
+        http://api.myshows.ru/profile/login/fb?token=<token>&userId=<userId>
+        http://api.myshows.ru/profile/login/tw?token=<token>&userId=<userId>&userId=<secret>
+        """
+        super(MyShowsSocialLogin, self).__init__()
+
+        if social not in self.SOCIALS:
+            raise ValueError("Invalid social parameter. Must be in %s" % self.SOCIALS)
+        self._login_path = constants.LOGIN_PATH + "/%s" % social
+        for item in kwargs.items():
+            if not item[1]:
+                raise ValueError("Empty %s login parameter" % item[0])
+        self._credentials.update(kwargs)
