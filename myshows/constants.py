@@ -1,0 +1,5 @@
+API_HOST = "http://api.myshows.ru/"
+LOGIN_PATH = "profile/login"
+VK_LOGIN_PATH = LOGIN_PATH + " /vk"
+PROFILE_PATH = "profile/"
+SHOWS_PATH = PROFILE_PATH + "shows/"
