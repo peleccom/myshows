@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import urllib
 import urllib2
 import urlparse
@@ -18,6 +19,10 @@ class MyShows(object):
 
     def api_call(self, url, params, return_codes, not_json=False):
         if params:
+            for k in params.keys():
+                val = params[k]
+                if isinstance(val, unicode):
+                    params[k] = val.encode('utf8')
             enc_data = urllib.urlencode(params)
             url += "?" + enc_data
         print url
