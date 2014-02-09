@@ -2,7 +2,6 @@ import urllib
 import urllib2
 import urlparse
 import json
-from . import login
 from . import constants
 from . import exceptions
 
@@ -14,36 +13,68 @@ class MyShows(object):
 
     def login(self):
         if not self._login_obj:
-            raise exeptions.MyShowsLoginException("Login object is empty")
+            raise exceptions.MyShowsLoginException("Login object is empty")
         return self._login_obj.login()
 
+    def api_call(self, url, params, return_codes, not_json=False):
+        if params:
+            enc_data = urllib.urlencode(params)
+            url += "?" + enc_data
+        print url
+        try:
+            r = self._opener.open(url)
+        except urllib2.HTTPError, e:
+            code = e.getcode()
+            if code not in return_codes:
+                raise exceptions.MyShowsException("Incorrect return code %d" % code)
+            else:
+                if code == 401:
+                    raise exceptions.MyShowsLoginRequiredException()
+                elif code == 404:
+                    raise exceptions.MyShowsNotFoundException()
+                elif code == 500:
+                    raise exceptions.MyShowsInvalidParameter()
+        s = r.read()
+        if not_json:
+            return s
+        json_result = json.loads(s)
+        return json_result
 
     def profile(self):
         url = urlparse.urljoin(constants.API_HOST, constants.PROFILE_PATH)
-        print url
-        r = self._opener.open(url)
-        code = r.getcode()
-        if code != 200:
-            if code == 401:
-                raise exceptions.MyShowsLoginRequired()
-            else:
-                raise exceptions.MyShowsException("Incorrect return code %d" % code)
-	return r.read()
+        return self.api_call(url, None, [401])
         
     def shows(self):
         url = urlparse.urljoin(constants.API_HOST, constants.SHOWS_PATH)
-        print url
-        r = self._opener.open(url)
-        code = r.getcode()
-        if code != 200:
-            if code == 401:
-                raise exceptions.MyShowsLoginRequired()
-            else:
-                raise exceptions.MyShowsException("Incorrect return code %d" % code)
-        return r.read()
+        return self.api_call(url, None, [401])
 
+    def search_file(self, filename):
+        url = urlparse.urljoin(constants.API_HOST, constants.SEARCH_EPISODE_PATH)
+        data = {
+            'q': filename
+        }
+        return self.api_call(url, data, [404, 500])
 
+    def search(self, q):
+        url = urlparse.urljoin(constants.API_HOST, constants.SEARCH_PATH)
+        data = {
+        'q': q
+        }
+        return self.api_call(url, data, [404, 500])
 
+    def show_id(self, show_id):
+        url = urlparse.urljoin(constants.API_HOST, constants.SHOW_ID_PATH)
+        url += "%d" % show_id
+        return self.api_call(url, None, [404])
+
+    def genres(self):
+        url = urlparse.urljoin(constants.API_HOST, constants.SHOW_ID_PATH)
+        return self.api_call(url, None, None)
+
+    def check_episode(self, episode_id):
+        url = urlparse.urljoin(constants.API_HOST, constants.CHECK_PATH)
+        url += "%d" % episode_id
+        return self.api_call(url, None, [401], not_json=True)
 
 
 

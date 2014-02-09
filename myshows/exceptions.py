@@ -1,9 +1,12 @@
 class MyShowsException(Exception):
     pass
 
-class MyShowsLoginRequired(MyShowsException):
+class MyShowsLoginRequiredException(MyShowsException):
     pass
-
+class MyShowsNotFoundException(MyShowsException):
+    pass
+class MyShowsInvalidParameter(MyShowsException):
+    pass
 class MyShowsLoginException(Exception):
     pass
 class MyShowsLoginEmptyException(MyShowsLoginException):

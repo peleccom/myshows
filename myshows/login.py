@@ -21,9 +21,10 @@ class MyShowsBaseLogin(object):
         url = urlparse.urljoin(constants.API_HOST, self._login_path)
         enc_data = urllib.urlencode(self._credentials)
         url += "?" + enc_data
-        r = self._opener.open(url)
-        code = r.getcode()
-        if code != 200:
+        try:
+            r = self._opener.open(url)
+        except urllib2.HTTPError, e:
+            code = e.getcode()
             if code == 403:
                 raise exceptions.MyShowsLoginIncorrectException()
             elif code == 404:
