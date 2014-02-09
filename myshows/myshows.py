@@ -81,5 +81,6 @@ class MyShows(object):
         url += "%d" % episode_id
         return self.api_call(url, None, [401], not_json=True)
 
-
-
+    def unwatched(self):
+        url = urlparse.urljoin(constants.API_HOST, constants.UNWATCHED_PATH)
+        return self.api_call(url, None, [401])
