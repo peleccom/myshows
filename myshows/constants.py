@@ -1,3 +1,4 @@
+﻿# -*- coding: UTF-8 -*-
 API_HOST = "http://api.myshows.ru/"
 LOGIN_PATH = "profile/login"
 VK_LOGIN_PATH = LOGIN_PATH + " /vk"

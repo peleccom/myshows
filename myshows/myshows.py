@@ -1,10 +1,12 @@
-# -*- coding: UTF-8 -*-
+Ôªø# -*- coding: UTF-8 -*-
+#‡‡‡
 import urllib
 import urllib2
 import urlparse
 import json
 from . import constants
 from . import exceptions
+from .classes import ShortSeries, Series
 
 class MyShows(object):
     def __init__(self, login_object):
@@ -51,7 +53,13 @@ class MyShows(object):
         
     def shows(self):
         url = urlparse.urljoin(constants.API_HOST, constants.SHOWS_PATH)
-        return self.api_call(url, None, [401])
+        shows_dict = self.api_call(url, None, [401])
+        res = []
+        for show_id in shows_dict.keys():
+            print shows_dict[show_id].keys()
+            res.append(ShortSeries(shows_dict[show_id]))
+        return res
+
 
     def search_file(self, filename):
         url = urlparse.urljoin(constants.API_HOST, constants.SEARCH_EPISODE_PATH)
@@ -65,7 +73,12 @@ class MyShows(object):
         data = {
         'q': q
         }
-        return self.api_call(url, data, [404, 500])
+        shows_dict = self.api_call(url, data, [404, 500])
+        res = []
+        for show_id in shows_dict.keys():
+            print shows_dict[show_id].keys()
+            res.append(Series(shows_dict[show_id]))
+        return res
 
     def show_id(self, show_id):
         url = urlparse.urljoin(constants.API_HOST, constants.SHOW_ID_PATH)
