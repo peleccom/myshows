@@ -1,5 +1,5 @@
 Ôªø# -*- coding: UTF-8 -*-
-#‡‡‡
+import hashlib
 import urllib
 import urllib2
 import urlparse
@@ -7,44 +7,51 @@ import json
 from . import constants
 from . import exceptions
 from .classes import ShortSeries, Series
+import requests
 
 class MyShows(object):
-    def __init__(self, login_object):
-        self._login_obj = login_object
-        self._opener = login_object.get_opener()
-        self.login()
+    def __init__(self):
+        self.session = requests.Session()
 
-    def login(self):
-        if not self._login_obj:
-            raise exceptions.MyShowsLoginException("Login object is empty")
-        return self._login_obj.login()
+    def login(self,login,password):
+        params = {
+            'login': login,
+            'password': hashlib.md5(password).hexdigest()
+        }
+        url = urlparse.urljoin(constants.API_HOST, constants.LOGIN_PATH)
+        self.api_call(url, params, [403, 404], not_json=True)
+
+    def login_vk(self,user_id, token):
+        pass
+
+    def login_fb(self,user_id, token):
+        pass
+
+    def login_tw(self, user_id, secret, token):
+        pass
 
     def api_call(self, url, params, return_codes, not_json=False):
-        if params:
-            for k in params.keys():
-                val = params[k]
-                if isinstance(val, unicode):
-                    params[k] = val.encode('utf8')
-            enc_data = urllib.urlencode(params)
-            url += "?" + enc_data
-        print url
         try:
-            r = self._opener.open(url)
-        except urllib2.HTTPError, e:
-            code = e.getcode()
+            r = self.session.get(url, params=params)
+        except Exception, e:
+            raise exceptions.MyShowsException(e.message)
+        code = r.status_code
+        if code != 200:
             if code not in return_codes:
                 raise exceptions.MyShowsException("Incorrect return code %d" % code)
             else:
                 if code == 401:
                     raise exceptions.MyShowsLoginRequiredException()
+                if code == 403:
+                    raise exceptions.MyShowsLoginIncorrectException()
                 elif code == 404:
                     raise exceptions.MyShowsNotFoundException()
                 elif code == 500:
                     raise exceptions.MyShowsInvalidParameter()
-        s = r.read()
+
         if not_json:
-            return s
-        json_result = json.loads(s)
+            return r.text
+        json_result = r.json()
         return json_result
 
     def profile(self):
