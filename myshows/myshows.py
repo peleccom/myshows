@@ -54,16 +54,27 @@ class MyShows(object):
         json_result = r.json()
         return json_result
 
-    def profile(self):
+    def profile(self, username=None):
+        """
+        User profile
+        :param username:
+        :return:
+        """
         url = urlparse.urljoin(constants.API_HOST, constants.PROFILE_PATH)
+        if username:
+            url = urlparse.urljoin(url, username)
         return self.api_call(url, None, [401])
         
     def shows(self):
+        """
+        user shows
+        :return: list of ShortSeries
+        """
         url = urlparse.urljoin(constants.API_HOST, constants.SHOWS_PATH)
         shows_dict = self.api_call(url, None, [401])
         res = []
         for show_id in shows_dict.keys():
-            print shows_dict[show_id].keys()
+            # print shows_dict[show_id].keys()
             res.append(ShortSeries(shows_dict[show_id]))
         return res
 
@@ -83,7 +94,7 @@ class MyShows(object):
         shows_dict = self.api_call(url, data, [404, 500])
         res = []
         for show_id in shows_dict.keys():
-            print shows_dict[show_id].keys()
+            # print shows_dict[show_id].keys()
             res.append(Series(shows_dict[show_id]))
         return res
 
